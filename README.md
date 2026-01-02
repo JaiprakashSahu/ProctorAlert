@@ -80,8 +80,8 @@ This system uses a **custom, rule-based approach** — NOT a pretrained emotion 
 ### Scoring Algorithm
 
 ```python
-# Baseline: Rolling neutral baseline, recalibrated when FOCUSED
-# This avoids assuming a "standard" face shape
+# Short-term neutral baseline recalibrated when the student is in a FOCUSED state.
+# This avoids bias from natural facial structure differences.
 
 confusion_score = 0.0
 
@@ -107,8 +107,8 @@ if score < 0.4 for 2 seconds → FOCUSED
 
 - **Explainable**: Every decision can be traced to specific landmark measurements
 - **No Black Box**: No opaque neural network predictions
-- **Adaptive**: Short-term baseline handles natural facial variation
-- **Robust**: Temporal smoothing prevents false positives from transient expressions
+- **Adaptive**: Short-term neutral baseline is recalibrated when FOCUSED, handling natural facial variation
+- **Robust**: Temporal smoothing + hysteresis prevents false positives from transient expressions
 
 ## Proctoring Rules
 
@@ -122,12 +122,12 @@ if score < 0.4 for 2 seconds → FOCUSED
 
 | Decision | Rationale |
 |----------|-----------|
-| **Rule-based over deep learning** | Transparent, explainable, no training data needed |
-| **WebSockets over REST** | Real-time bidirectional communication with low latency |
-| **JPEG frames over raw video** | Efficient bandwidth (~30KB/frame vs ~1MB raw) |
-| **Per-student teacher dashboards** | Avoids cross-instance WebSocket state issues in deployment |
-| **Temporal smoothing is essential** | Single-frame analysis is noisy; patterns emerge over time |
-| **Backend-generated timestamps** | Consistent timing across deployment instances |
+| **Rule-based CV over deep learning** | Ensures explainability and debuggability; every decision traceable to landmark measurements |
+| **JPEG frame streaming over raw video** | Reduces bandwidth (~30KB/frame vs ~1MB raw); sufficient for facial landmark extraction |
+| **Single-instance backend** | Maintains WebSocket state consistency; avoids distributed state complexity for MVP |
+| **Temporal smoothing + hysteresis** | Avoids noisy, frame-level decisions; patterns emerge over 3-5 second windows |
+| **Vanilla TypeScript frontend** | Keeps media capture and WebSocket logic explicit; no framework abstraction |
+| **Per-student teacher subscriptions** | Teachers subscribe to specific students, avoiding broadcast scaling issues |
 
 ## Technical Decisions
 
@@ -148,7 +148,7 @@ This prevents latency spikes during video processing.
 
 ### Frame Dropping
 
-The backend prioritizes freshness over completeness:
+A lightweight in-memory frame buffer ensures that only the most recent frame is processed, preventing backlog under high load:
 
 ```python
 class FrameBuffer:
@@ -157,7 +157,7 @@ class FrameBuffer:
         # Only latest frame is kept
 ```
 
-This prevents memory buildup and latency drift under load.
+This prevents memory buildup and latency drift. The backend prioritizes freshness over completeness.
 
 ### Timeline Memory Limit
 
@@ -253,6 +253,10 @@ SmartSession/
 │   └── vite.config.ts
 └── README.md
 ```
+
+## Limitations
+
+This MVP is designed for single-student sessions and does not yet include multi-student classroom aggregation, persistent session storage, or horizontal scaling across multiple backend instances.
 
 ## License
 
