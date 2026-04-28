@@ -1,10 +1,12 @@
-const WS_BASE_URL = (import.meta as any).env?.VITE_WS_BASE_URL || 'ws://localhost:8000';
+const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8000';
+console.log('[WebSocket] Base URL:', WS_BASE_URL);
 
 type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
 
 interface WebSocketManagerOptions {
     onMessage?: (data: any) => void;
     onStatusChange?: (status: ConnectionStatus) => void;
+    onReconnect?: () => void;
 }
 
 const RECONNECT_DELAYS = [1000, 2000, 4000, 8000, 16000];
@@ -28,12 +30,14 @@ export class WebSocketManager {
     private attemptConnect(): void {
         if (!this.url) return;
 
+        console.log('[WebSocket] Attempting to connect to:', this.url);
         this.options.onStatusChange?.('connecting');
 
         try {
             this.ws = new WebSocket(this.url);
 
             this.ws.onopen = () => {
+                console.log('[WebSocket] Connection opened');
                 this.options.onStatusChange?.('connected');
                 this.reconnectAttempt = 0;
             };
@@ -47,11 +51,12 @@ export class WebSocketManager {
                 }
             };
 
-            this.ws.onerror = () => {
-                console.error('WebSocket error');
+            this.ws.onerror = (err) => {
+                console.error('[WebSocket] Error:', err);
             };
 
             this.ws.onclose = (event) => {
+                console.log('[WebSocket] Closed:', event.code, event.reason, 'wasClean:', event.wasClean);
                 this.options.onStatusChange?.('disconnected');
                 this.ws = null;
 
@@ -60,7 +65,10 @@ export class WebSocketManager {
                         Math.min(this.reconnectAttempt, RECONNECT_DELAYS.length - 1)
                     ];
                     this.reconnectAttempt++;
-                    this.reconnectTimeout = window.setTimeout(() => this.attemptConnect(), delay);
+                    this.reconnectTimeout = window.setTimeout(() => {
+                        this.options.onReconnect?.();
+                        this.attemptConnect();
+                    }, delay);
                 }
             };
         } catch (err) {

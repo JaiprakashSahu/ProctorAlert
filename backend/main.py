@@ -237,6 +237,15 @@ async def student_websocket(websocket: WebSocket, student_id: str):
 async def teacher_websocket(websocket: WebSocket, student_id: str):
     await connection_manager.connect_teacher(student_id, websocket)
     
+    # Send cached telemetry immediately on connect for instant state sync
+    session = session_manager.get_session(student_id)
+    if session and session.last_telemetry:
+        try:
+            await websocket.send_json(session.last_telemetry)
+            logger.info(f"Sent cached telemetry to teacher for {student_id}")
+        except Exception as e:
+            logger.error(f"Failed to send cached telemetry: {e}")
+    
     try:
         while True:
             await websocket.receive_text()

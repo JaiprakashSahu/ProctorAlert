@@ -45,6 +45,7 @@ class StudentSession:
     status_start_time: float = field(default_factory=time.time)
     confusion_start_time: float | None = None
     focused_start_time: float | None = None
+    last_telemetry: dict | None = None
     
     def update_face_detection(self, face_count: int) -> None:
         """Update face detection state with grace period logic."""
@@ -130,7 +131,7 @@ class StudentSession:
     
     def get_telemetry(self) -> dict[str, Any]:
         """Generate telemetry object for teacher dashboard."""
-        return {
+        telemetry = {
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
             "student_id": self.student_id,
             "face_count": self.last_face_count,
@@ -138,6 +139,8 @@ class StudentSession:
             "confusion_score": round(self.get_avg_confusion(), 2),
             "status": self.current_status.value
         }
+        self.last_telemetry = telemetry
+        return telemetry
 
 
 class SessionManager:

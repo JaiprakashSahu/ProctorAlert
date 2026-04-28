@@ -95,10 +95,15 @@ class App {
         <h1 class="home-title">SmartSession</h1>
         <p class="home-description">
           Real-time student engagement monitoring with transparent, rule-based computer vision analysis.
+          Track focus, detect confusion, and get instant proctor alerts.
         </p>
         <div class="home-actions">
-          <button class="btn btn-primary" data-route="student">Join as Student</button>
-          <button class="btn btn-primary" data-route="teacher">Open Teacher Dashboard</button>
+          <button class="btn btn-primary" data-route="student">
+            <span>📹</span> Join as Student
+          </button>
+          <button class="btn btn-primary" data-route="teacher">
+            <span>📊</span> Teacher Dashboard
+          </button>
         </div>
       </div>
     `;
