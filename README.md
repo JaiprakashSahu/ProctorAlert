@@ -260,4 +260,4 @@ This MVP is designed for single-student sessions and does not yet include multi-
 
 ## License
 
-MIT
+MIT License
